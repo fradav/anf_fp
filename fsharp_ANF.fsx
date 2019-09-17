@@ -1,12 +1,12 @@
-#if !INTERACTIVE
 #r "paket:
 storage: packages
+framework: netstandard2.0
+source https://api.nuget.org/v3/index.json
 nuget FSharp.Data
 nuget Deedle
 nuget XPlot.Plotly
 nuget System.Data.SQLite
-nuget SQLProvider"
-#endif
+nuget SQLProvider //"
 #load "./.fake/fsharp_ANF.fsx/intellisense.fsx"
 
 #if INTERACTIVE
