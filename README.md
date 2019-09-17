@@ -1,5 +1,6 @@
 # Tutoriel général F#
 - Installer le [dernier SDK de Dotnet](https://dotnet.microsoft.com/download) pour la plateforme adaptée (Mac/Linux/Windows)
+- Ensuite sur chaque plateforme
     - Windows : élécharger et installer les [Build Tools 2019](https://visualstudio.microsoft.com/fr/thank-you-downloading-visual-studio/?sku=BuildTools&rel=16#), en prenant bien soin de choisir le "workload" F#
     - Linux :
         - Ajouter le dépôt mono au système comme indiqué sur [la page du projet mono](https://www.mono-project.com/download/stable/)
