@@ -1,3 +1,35 @@
+/////////////////////////////////////////////////////////////////////////
+///                         Maybe Monad                               ///
+/////////////////////////////////////////////////////////////////////////
+type Maybe() =
+    member __.Bind(p, rest) =
+        match p with
+        | None -> None
+        | Some a -> rest a
+
+    member __.Return(p) =
+        Some p
+
+let maybe = Maybe()
+
+let tryDecr x n = 
+  printfn "Conditionally decrementing %A by %A" x n
+  if x > n then Some (x - n) else None
+
+let maybeDecr x = maybe {
+    let! y = tryDecr x 10
+    let! z = tryDecr y 30
+    let! t = tryDecr z 50
+    return t
+  }
+
+maybeDecr 100
+maybeDecr 30
+maybeDecr 5
+
+/////////////////////////////////////////////////////////////////////////
+///                        Eventually                                 ///
+/////////////////////////////////////////////////////////////////////////
 // Computations that can be run step by step
 type Eventually<'T> =
     | Done of 'T
@@ -83,16 +115,16 @@ module Eventually =
 
 // The builder class.
 type EventuallyBuilder() =
-    member x.Bind(comp, func) = Eventually.bind func comp
-    member x.Return(value) = Eventually.result value
-    member x.ReturnFrom(value) = value
-    member x.Combine(expr1, expr2) = Eventually.combine expr1 expr2
-    member x.Delay(func) = Eventually.delay func
-    member x.Zero() = Eventually.result ()
-    member x.TryWith(expr, handler) = Eventually.tryWith expr handler
-    member x.TryFinally(expr, compensation) = Eventually.tryFinally expr compensation
-    member x.For(coll:seq<_>, func) = Eventually.forLoop coll func
-    member x.Using(resource, expr) = Eventually.using resource expr
+    member __.Bind(comp, func) = Eventually.bind func comp
+    member __.Return(value) = Eventually.result value
+    member __.ReturnFrom(value) = value
+    member __.Combine(expr1, expr2) = Eventually.combine expr1 expr2
+    member __.Delay(func) = Eventually.delay func
+    member __.Zero() = Eventually.result ()
+    member __.TryWith(expr, handler) = Eventually.tryWith expr handler
+    member __.TryFinally(expr, compensation) = Eventually.tryFinally expr compensation
+    member __.For(coll:seq<_>, func) = Eventually.forLoop coll func
+    member __.Using(resource, expr) = Eventually.using resource expr
 
 let eventually = EventuallyBuilder()
 
