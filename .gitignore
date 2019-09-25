@@ -2,3 +2,5 @@
 /.ionide
 /.vscode
 *.lock
+/packages
+/.ipynb*

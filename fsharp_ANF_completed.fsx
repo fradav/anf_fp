@@ -1,18 +1,13 @@
+#if !INTERACTIVE
 #r "paket:
-source https://nuget.org/api/v2
-storage:packages
+storage: packages
 nuget FSharp.Data
-nuget DynamicInterop
 nuget Deedle
 nuget XPlot.Plotly
 nuget System.Data.SQLite
-nuget SQLProvider
-nuget Python.Runtime.NETStandard
-nuget Python.Included
-nuget FSharp.Interop.Dynamic 
-github mndrake/IfSharpLab src/DeedleFormat.fs //"
-#I "./.fake/fsharp_ANF.fsx"
-#load "intellisense.fsx"
+nuget SQLProvider"
+#endif
+#load "./.fake/fsharp_ANF.fsx/intellisense.fsx"
 
 #if INTERACTIVE
 do fsi.AddPrinter(fun (printer:Deedle.Internal.IFsiFormattable) -> "\n" + (printer.Format()))
@@ -20,13 +15,18 @@ do fsi.AddPrinter(fun (printer:Deedle.Internal.IFsiFormattable) -> "\n" + (print
 #r "System.Linq"
 #endif
 
-/////////////////////////////////////////////////////////////////////////
-///                       Seq and Pipes                               ///
-/////////////////////////////////////////////////////////////////////////
+////////////////////////
+/// Seq et Pipelines
 
 open FSharp.Data
 
 type Gbpusd = CsvProvider<const(__SOURCE_DIRECTORY__ + "/data/gbpusd.csv")>
+let gbpusd = Gbpusd.GetSample().Rows
+
+gbpusd
+|> Seq.pairwise
+|> Seq.filter (fun (before, after) -> before.GbpUsd - after.GbpUsd < 0.2M)
+|> Seq.map (fun (before,_) -> before.Date.Date.ToShortDateString())
 
 ////////////////////////
 /// Frames
@@ -35,9 +35,16 @@ open Deedle
 
 let titanic = Frame.ReadCsv(__SOURCE_DIRECTORY__ + "/data/titanic.csv")
 
-/////////////////////////////////////////////////////////////////////////
-///                       Type Providers I                            ///
-/////////////////////////////////////////////////////////////////////////
+titanic
+|> Frame.filterRows (fun _ row -> row.GetAs "Sex" = "female")
+|> Stats.mean
+
+titanic
+|> Frame.groupRowsByString "Sex"
+|> Frame.applyLevel fst Stats.mean
+
+////////////////////////
+/// Type providers I
 
 open FSharp.Data
 open XPlot.Plotly
@@ -46,16 +53,34 @@ open XPlot.Plotly
 
 let wb = WorldBankData.GetDataContext()
 
+wb.Countries.France.Indicators.``CO2 emissions (kt)``
+|> Chart.Line
+|> Chart.Show
+
+wb.Countries.Germany.Indicators.``CO2 emissions (kt)``
+|> Chart.Line
+|> Chart.Show
+
+wb.Countries.``United States``.Indicators.``CO2 emissions (kt)``
+|> Chart.Line
+|> Chart.Show
+
 type W = JsonProvider<"http://api.openweathermap.org/data/2.5/forecast/daily?q=Prague&mode=json&units=metric&cnt=10&APPID=cb63a1cf33894de710a1e3a64f036a27">
 
 let getTemps city = 
   let w = W.Load("http://api.openweathermap.org/data/2.5/forecast/daily?q=" + city + "&mode=json&units=metric&cnt=10&APPID=cb63a1cf33894de710a1e3a64f036a27")
   [ for d in w.List -> d.Temp.Day ]
 
+let cities = ["Paris";"Lyon";"Marseille"]
 
-/////////////////////////////////////////////////////////////////////////
-///                       Type Providers II                           ///
-/////////////////////////////////////////////////////////////////////////
+cities 
+|> Seq.map (getTemps >> Seq.indexed)
+|> Chart.Column
+|> Chart.WithLabels cities
+|> Chart.Show
+
+////////////////////////
+/// Type providers II
 
 [<Literal>]
 let ConnectionString = 
@@ -75,16 +100,45 @@ type Sql = SqlDataProvider<
                 ResolutionPath = ResolutionPath, 
                 CaseSensitivityChange = Common.CaseSensitivityChange.ORIGINAL>
 
+let db = Sql.GetDataContext()
 
-/////////////////////////////////////////////////////////////////////////
-///                Standard Computation Expressions                   ///
-/////////////////////////////////////////////////////////////////////////
+let customers =
+    db.Main.Customers
+    |> Seq.map (fun c -> c.ContactName)
+    |> Seq.toList
+
+
+////////////////////////
+/// Computations expressions
 
 // Sequences
+let naturals =
+    let rec nat k = 
+        seq {
+            yield k
+            yield! nat (k + 1)
+        }
+    nat 0
 
+naturals
+|> Seq.map (fun x -> x * x)
+|> Seq.take 10
+|> Seq.iter (printfn "%d")
+
+open System.Linq
 
 // Query
-open System.Linq
+let customerslinq =
+    query {
+        for c in db.Main.Customers do
+        groupBy c.Country into y
+        sortByDescending (y.Count())
+        take 5
+        select (y.Key, y.Count())
+    }
+
+customerslinq
+|> Seq.iter (printfn "%A")
 
 // Async
 open System.Net
@@ -106,3 +160,11 @@ let fetchAsync(name, url:string) =
             | ex -> printfn "%s" (ex.Message);
     }
 
+let runAll() =
+    urlList
+    |> Seq.map fetchAsync
+    |> Async.Parallel
+    |> Async.RunSynchronously
+    |> ignore
+
+runAll()
