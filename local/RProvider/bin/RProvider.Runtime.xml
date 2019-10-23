@@ -1,0 +1,349 @@
+<?xml version="1.0" encoding="utf-8"?>
+<doc>
+<assembly><name>RProvider.Runtime</name></assembly>
+<members>
+<member name="P:RProvider.REnv.Keys">
+<summary>
+ Returns the keys of all values available in the environment
+ (This is equivalent to calling `R.ls` function)
+</summary>
+</member>
+<member name="P:RProvider.REnv.Environment">
+<summary>
+ Returns the underlying R environment, represented as `SymbolicExpression`
+</summary>
+</member>
+<member name="M:RProvider.REnv.Get(System.String)">
+<summary>
+ Get a value from the R environment as `SymbolicExpression` 
+ (This is equivalent to calling `R.get` function)
+</summary>
+</member>
+<member name="T:RProvider.REnv">
+<summary>
+ The object represents an R environment loaded from RData file.
+ This type is typically used through an `RData` type provider. To 
+ get a statically typed R environment for a given file, use
+ `RData&lt;&quot;C:\\myfile.rdata&quot;&gt;`.
+</summary>
+</member>
+<member name="M:RProvider.IDefaultConvertFromR.Convert(RDotNet.SymbolicExpression)">
+<summary>
+ The method is called when the user accesses the `Value` property 
+ on a `SymbolicExpression` value returned from the R provider.
+</summary>
+</member>
+<member name="T:RProvider.IDefaultConvertFromR">
+<summary>
+ This interface can be used for providing a default converter that converts 
+ R value to .NET `obj` values. The converter is used whenever the user calls the
+ `se.Value` member on `SymbolicExpression. This property should convert an R
+ value to the &quot;most appropriate&quot; .NET object.
+</summary>
+</member>
+<member name="M:RProvider.IConvertFromR`1.Convert(RDotNet.SymbolicExpression)">
+<summary>
+ The method is called when the user calls `GetValue&lt;&apos;TOutType&gt;()` on a
+ `SymbolicExpression` value returned from the R provider.
+
+ ## Example
+ To use this interface, you need to write a plugin (`YourPlugin.Plugin.dll`) 
+ that exports an implementation of this interface using MEF. The method 
+ `Convert` of the interface can return `None` when the conversion is not
+ possible.
+
+     [&lt;Export(typeof&lt;IConvertFromR&lt;MyType&gt;&gt;)&gt;]
+     type ConvertMyThingFromR() =
+       interface IConvertFromR&lt;MyThing&gt; with 
+       member x.Convert(symExpr) = 
+         Some(new MyThing()) // TODO: Convert &apos;symExpr&apos; from R.
+
+</summary>
+</member>
+<member name="T:RProvider.IConvertFromR`1">
+<summary>
+ This interface can be used for providing new convertors that can convert
+ R values to .NET types. The converter is used whenever the users calls the
+ `se.GetValue&lt;&apos;TOutType&gt;()` on a `SymbolicExpression` value returned from R
+ provider.
+</summary>
+</member>
+<member name="M:RProvider.IConvertToR`1.Convert(RDotNet.REngine,`0)">
+<summary>
+ The method is called when the user calls any of the provided R
+ functions with a value of type `&apos;TInType` as an argument.
+
+ ## Example
+ To use this interface, you need to write a plugin (`YourPlugin.Plugin.dll`) 
+ that exports an implementation of this interface using MEF. The method 
+ `Convert` of the interface is called with the value of `&apos;TInType` and should
+ return an R symbolic expression.
+
+     [&lt;Export(typeof&lt;IConvertToR&lt;IFrame&gt;&gt;)&gt;]
+     type ConvertMyThingToR() =
+       interface IConvertToR&lt;IFrame&gt; with
+         member x.Convert(engine, input:MyThing) =
+           R.c(1,2,3) // TODO: Convert &apos;input&apos; to R.
+
+</summary>
+</member>
+<member name="T:RProvider.IConvertToR`1">
+<summary>
+ This inteface can be used for providing new convertors that can convert
+ custom .NET data types to R values. The converter is used whenever the
+ user calls an R function (such as `R.foo(...)`) with an arguments that 
+ is of type `TInType`.
+</summary>
+</member>
+<member name="M:RProvider.RDotNetExtensions2.SymbolicExpression.Print(RDotNet.SymbolicExpression)">
+<summary>
+ Call the R print function and return output as a string
+</summary>
+</member>
+<member name="T:RProvider.RDotNetExtensions2">
+<summary>
+ [omit]
+</summary>
+</member>
+<member name="M:RProvider.RInterop.defaultFromR(RDotNet.SymbolicExpression)">
+<summary>
+ Convert a symbolic expression to some default .NET representation
+</summary>
+</member>
+<member name="M:RProvider.RInterop.toR(System.Object)">
+<summary>
+ Convert a value to a value in R.
+ Generally you shouldn&apos;t use this function - it is mainly for testing.
+</summary>
+</member>
+<member name="M:RProvider.RInterop.deserializeRValue(System.String)">
+<summary>
+ Given a string produced by `serializeRValue`, reconstruct the original RValue object 
+</summary>
+</member>
+<member name="M:RProvider.RInterop.serializeRValue(RProvider.RInterop.RValue)">
+<summary>
+ Turn an `RValue` (which captures type information of a value or function)
+ into a serialized string that can be spliced in a quotation 
+</summary>
+</member>
+<member name="T:RProvider.RInterop">
+<summary>
+ [omit]
+</summary>
+</member>
+<member name="T:RProvider.RDotNetExtensions">
+<summary>
+ [omit]
+</summary>
+</member>
+<member name="M:RProvider.RInteropInternal.getNextSymbolName">
+<summary>
+ Get next symbol name
+</summary>
+</member>
+<member name="M:RProvider.RInteropInternal.registerToR``1(Microsoft.FSharp.Core.FSharpFunc{RDotNet.REngine,Microsoft.FSharp.Core.FSharpFunc{``0,RDotNet.SymbolicExpression}})">
+<summary>
+ Register a function that will convert from a specific type to a value in R.
+ Alternatively, you can build a MEF plugin that exports IConvertToR.
+ registerToR is more suitable for experimentation in F# interactive.
+</summary>
+</member>
+<member name="M:RProvider.Helpers.namedParams``1(System.Collections.Generic.IEnumerable{System.Tuple{System.String,``0}})">
+<summary>
+ Construct a dictionary of named params to pass to an R function.
+
+ ## Example
+ For example, if you want to call the `R.plot` function with named parameters
+ specifying `x`, `type`, `col` and `ylim`, you can use the following:
+
+     [ &quot;x&quot;, box widgets; 
+       &quot;type&quot;, box &quot;o&quot;; 
+       &quot;col&quot;, box &quot;blue&quot;;
+       &quot;ylim&quot;, box [0; 25] ]
+     |&gt; namedParams |&gt; R.plot 
+
+</summary>
+</member>
+<member name="T:RProvider.Helpers">
+<summary>
+ Contains helper functions for calling the functions generated by the R provider,
+ such as the `namedParams` function for specifying named parameters.
+ The module is automatically opened when you open the `RProvider` namespace.
+</summary>
+</member>
+<member name="P:RProvider.Internal.IRInteropServer.InitializationErrorMessage">
+<summary>
+ If there was an initialization error when loading R provider, this
+ string returns the error. Otherwise, the value is `null`.
+</summary>
+</member>
+<member name="M:RProvider.Internal.IRInteropServer.LoadPackage(System.String)">
+<summary>
+ Loads the package (using R&apos;s `require`). This should be called before `GetBindings`.
+</summary>
+</member>
+<member name="M:RProvider.Internal.IRInteropServer.GetRDataSymbols(System.String)">
+<summary>
+ Given an `.rdata` file, returns the names of the symbols in the file, together
+ with an F# type that it can be converted to (this is done by getting the type
+ of `symExpr.Value` using currently installed convertors). If the type is not 
+ available, this returns `null`.
+</summary>
+</member>
+<member name="M:RProvider.Internal.IRInteropServer.GetPackages">
+<summary>
+ Returns an array with the names of all installed packages (e.g. &quot;base&quot;, &quot;graphics&quot; etc.)
+</summary>
+</member>
+<member name="M:RProvider.Internal.IRInteropServer.GetPackageDescription(System.String)">
+<summary>
+ Returns the description (documentation) for a given package
+</summary>
+</member>
+<member name="M:RProvider.Internal.IRInteropServer.GetFunctionDescriptions(System.String)">
+<summary>
+ Returns an array with pairs consisting of function name and its description
+</summary>
+</member>
+<member name="M:RProvider.Internal.IRInteropServer.GetBindings(System.String)">
+<summary>
+ Returns an array with binding information. The first string is the name of the
+ function. The second string is serialized `RValue` with information about the
+ kind of the binding and function parameters (use `deserializeRValue`).
+</summary>
+</member>
+<member name="T:RProvider.Internal.IRInteropServer">
+<summary>
+ Interface that is used for communication between the R provider server
+ (RProvider.Server.exe) which communicates with R and the client that runs
+ in the host IDE process (Visual Studio, Xamarin Studio etc.)
+
+ NOTE: In order to support standalone compilation of `RProvider.Server.exe` (which 
+ inlines the F# Core library), the interface does not expose any F# Core types.
+</summary>
+</member>
+<member name="M:RProvider.Internal.Logging.logWithOutput``1(RProvider.CharacterDeviceInterceptor,Microsoft.FSharp.Core.FSharpFunc{Microsoft.FSharp.Core.Unit,``0})">
+<summary>
+ Run the specified function and log potential expceptions, as well
+ as the output written to console (unless characterDevice.IsCapturing)
+</summary>
+</member>
+<member name="M:RProvider.Internal.Logging.logf``1(Microsoft.FSharp.Core.PrintfFormat{``0,Microsoft.FSharp.Core.Unit,System.String,Microsoft.FSharp.Core.Unit})">
+<summary>
+ Log formatted string to a log file
+</summary>
+</member>
+<member name="M:RProvider.Internal.Logging.writeString(System.String)">
+<summary>
+ Append string to a log file
+</summary>
+</member>
+<member name="P:RProvider.Internal.Logging.logFile">
+<summary>
+ Log file - if the RPROVIDER_LOG variable is not set, the default on  
+ Windows is &quot;C:\Users\&lt;user&gt;\AppData\Roaming\RLogs\log.txt&quot; and on Mac 
+ this is in &quot;/User/&lt;user&gt;/.config/RLogs/log.txt&quot;)
+</summary>
+</member>
+<member name="P:RProvider.Internal.Logging.loggingEnabled">
+<summary>
+ The logging is enabled by setting the RPROVIDER_LOG environment variable
+ Alternatively, just change this constant to &apos;true&apos; and logs will be 
+ saved in the default location (see below)
+</summary>
+</member>
+<member name="T:RProvider.Internal.Logging">
+<summary>
+ [omit]
+</summary>
+</member>
+<member name="M:RProvider.Internal.Configuration.getRProviderConfValue(System.String)">
+<summary>
+ On Mac (and Linux), we use ~/.rprovider.conf in user&apos;s home folder for 
+ various configuration (64-bit mono and R location if we cannot determine it)
+</summary>
+</member>
+<member name="M:RProvider.Internal.Configuration.resolveReferencedAssembly(System.String)">
+<summary>
+ Given an assembly name, try to find it in either assemblies
+ loaded in the current AppDomain, or in one of the specified 
+ probing directories.
+</summary>
+</member>
+<member name="M:RProvider.Internal.Configuration.getProbingLocations">
+<summary>
+ Reads the &apos;RProvider.dll.config&apos; file and gets the &apos;ProbingLocations&apos; 
+ parameter from the configuration file. Resolves the directories and returns
+ them as a list.
+</summary>
+</member>
+<member name="M:RProvider.Internal.Configuration.getAssemblyLocation(System.Reflection.Assembly)">
+<summary>
+ Returns the real assembly location - when shadow copying is enabled, this
+ returns the original assembly location (which may contain other files we need)
+</summary>
+</member>
+<member name="M:RProvider.Internal.Configuration.searchDirectories(Microsoft.FSharp.Collections.FSharpList{System.String},Microsoft.FSharp.Collections.FSharpList{System.String})">
+<summary>
+ Finds directories relative to &apos;dirs&apos; using the specified &apos;patterns&apos;.
+ Patterns is a string, such as &quot;..\foo\*\bar&quot; split by &apos;\&apos;. Standard
+ .NET libraries do not support &quot;*&quot;, so we have to do it ourselves..
+</summary>
+</member>
+<member name="M:RProvider.Internal.Configuration.getRProviderRuntimeAssembly">
+<summary>
+ Returns the Assembly object of RProvider.Runtime.dll (this needs to
+ work when called from RProvider.DesignTime.dll and also RProvider.Server.exe)
+</summary>
+</member>
+<member name="T:RProvider.Internal.Configuration">
+<summary>
+ [omit]
+</summary>
+</member>
+<member name="T:RProvider.Internal.RInit.RInitResult`1">
+<summary>
+ Represents R value used in initialization or information about failure
+</summary>
+</member>
+<member name="P:RProvider.Internal.RInit.engine">
+<summary>
+ Lazily initialized R engine.
+</summary>
+</member>
+<member name="P:RProvider.Internal.RInit.rHomePath">
+<summary>
+ Lazily initialized value that, find the R location or fails and returns RInitError
+</summary>
+</member>
+<member name="P:RProvider.Internal.RInit.characterDevice">
+<summary>
+ Global interceptor that captures R console output
+</summary>
+</member>
+<member name="M:RProvider.Internal.RInit.findRHomePath">
+<summary>
+ Find the R installation using &apos;getRLocation&apos; and add the directory to the
+ current environment varibale PATH (so that later loading can find &apos;R.dll&apos;)
+</summary>
+</member>
+<member name="M:RProvider.Internal.RInit.getRLocation">
+<summary>
+ Find the R installation. First check &quot;R_HOME&quot; environment variable, then look 
+ at the SOFTWARE\R-core\R\InstallPath value (using HKCU or, as a second try HKLM root)
+</summary>
+</member>
+<member name="T:RProvider.Internal.RInit">
+<summary>
+ [omit]
+</summary>
+</member>
+<member name="T:RProvider.Internal.Converters.Factor">
+<summary>
+ Contains higher-level converters
+ [omit]
+</summary>
+</member>
+</members>
+</doc>

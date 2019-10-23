@@ -4,3 +4,8 @@
 *.lock
 /packages
 /.ipynb*
+/.paket
+/packages
+/paket-files
+/paket.dependencies
+*.log
